@@ -1,0 +1,118 @@
+{
+    "map":[
+        {
+            "x": -1,
+            "y": 1,
+            "type": "sheep",
+            "number": "7"
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "type": "water",
+            "number": "7"
+        },
+        {
+            "x": 1,
+            "y": 1,
+            "type": "clay",
+            "number": "7"
+        },
+        {
+            "x": -2,
+            "y": 0,
+            "type": "wheat",
+            "number": "7"
+        },
+        {
+            "x": -1,
+            "y": 0,
+            "type": "ore",
+            "number": "7"
+        },
+        {
+            "x": 0,
+            "y": 0,
+            "type": "desert",
+            "number": "7"
+        },
+        {
+            "x": 1,
+            "y": 0,
+            "type": "clay",
+            "number": "7"
+        },
+        {
+            "x": 2,
+            "y": 0,
+            "type": "wood",
+            "number": "7"
+        },
+        {
+            "x": 0,
+            "y": 0,
+            "type": "street",
+            "where": 2,
+            "owner": "player"
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "type": "street",
+            "where": 1,
+            "owner": "player"
+        },
+        {
+            "x": -1,
+            "y": 1,
+            "type": "street",
+            "where": 0,
+            "owner": "player"
+        },
+        {
+            "x": 0,
+            "y": 1,
+            "type": "settlement",
+            "where": 0,
+            "owner": "player"
+        },
+        {
+            "x": -1,
+            "y": 1,
+            "type": "city",
+            "where": 0,
+            "owner": "player"
+        },
+        {
+            "x": -1,
+            "y": -1,
+            "type": "city",
+            "where": 1,
+            "owner": "player"
+        }
+    ],
+    "hud":{
+        "inventories":[
+            {
+                "owner": "player",
+                "wheat": 420,
+                "ore": 14,
+                "clay": 5,
+                "wood": 0,
+                "sheep": 1,
+                "street": 15,
+                "settlement": 5,
+                "city": 4
+            }
+        ]
+    },
+    "meta":{
+        "status": 2,
+        "players":[
+            {
+                "name": "yellow",
+                "color": "blue"
+            }
+        ]
+    }
+}
