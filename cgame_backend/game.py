@@ -65,7 +65,6 @@ class Game:
             candidate += 1
         return candidate
 
-
     def json(self):
         l = []
         for d in self.dice.dices:
@@ -88,7 +87,8 @@ class Game:
         winner = None
         if self.winner is not None:
             winner = self.winner.color
-        return {"key": self.key, "players": players, "active_player": self.players[self.active_player].color, "dice": dice,
+        return {"key": self.key, "players": players, "active_player": self.players[self.active_player].color,
+                "dice": dice,
                 "state": self.state.value, "active_trade": active_trade, "players_accepted": self.trade_accepted,
                 "get_player": get_player, "get_amount": self.get_amount, "winning_points": self.winning_points,
                 "winner": winner}

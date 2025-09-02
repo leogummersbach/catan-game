@@ -13,7 +13,7 @@ class Bot(Player):
         self.active_player: str = ""
         self.state: GameState = GameState.END
         self.game = game
-        self.address: str = "http://localhost:8000/cgameapi/"
+        self.address: str = f"http://localhost:8000/cgameapi/games/{game.key}/"
 
     def load(self):
         response = requests.get(self.address + "meta")

@@ -38,24 +38,24 @@ app.add_middleware(
 
 active_games = []
 ended_games = []
-"""
-g = Game()
-print(g.key)
-g.makeStandardGame()
+
+g1 = Game()
+print(f"Start game with key: {g1.key}")
+g1.makeStandardGame()
 p1 = Player("yellow")
-p2 = Bot("red", g)
-p3 = Bot("green", g)
-g.players.append(p1)
-g.players.append(p2)
-g.players.append(p3)
-bots = filter(lambda player: isinstance(player, Bot), g.players)
+p2 = Bot("red", g1)
+p3 = Bot("green", g1)
+g1.players.append(p1)
+g1.players.append(p2)
+g1.players.append(p3)
+bots = filter(lambda player: isinstance(player, Bot), g1.players)
 for bot in bots:
     thread = Thread(target=bot.mainloop)
     thread.start()
-g.start()
-writeGame(g)
-active_games.append(g.key)
-"""
+g1.start()
+writeGame(g1)
+active_games.append(g1.key)
+
 writeMeta(active_games, ended_games)
 
 @app.get("/cgameapi")
@@ -103,6 +103,7 @@ def end_turn(key, color):
     if g.players[g.active_player].color != color:
         raise HTTPException(status_code=403, detail=f"it is not player {color}'s turn")
     if g.state == GameState.TRADE_BUILD or g.state == GameState.SETUP_PHASE_PLACE or g.state == GameState.SETUP_PHASE_ROLL:
+
         if g.active_player + 1 >= len(g.players):
             g.active_player = 0
             if g.state == GameState.SETUP_PHASE_ROLL:
@@ -152,7 +153,8 @@ def dice_throw(key, color):
     DiceThrow(g)
     p.last_dice = g.dice.state
     if g.state == GameState.SETUP_PHASE_ROLL:
-        end_turn(color) #TODO hier fehl das argument key. dieser fehler sollte sehr häufig vorkommen
+        end_turn(key, color)
+        return
     else:
         if g.dice.state == 7:
             return_cards = g.compute_returns()
@@ -185,7 +187,7 @@ def move_robber(key, color, x, y):
             new_field[field_key] = field
     new_field[(x, y)] = FieldFigure(x, y, "robber")
     g.map.field_figures = new_field
-    to_draw = get_robable()
+    to_draw = get_robable(key)
     if len(to_draw) == 0:
         g.state = GameState.TRADE_BUILD
     else:
@@ -487,7 +489,7 @@ def street_build(key, color, x, y, where):
                     g.state = GameState.TRADE_BUILD
                     g.get_player = None
                 else:
-                    street_locations(color)
+                    street_locations(key, color)
                 g.compute_longest_road()
                 g.check_victory()
                 writeGame(g)
@@ -500,7 +502,7 @@ def street_build(key, color, x, y, where):
                 # placeable!
                 g.map.load_original()
                 g.map.place_street(Street(p, int(x), int(y), int(where)))
-                end_turn(color)
+                end_turn(key, color)
                 g.compute_longest_road()
                 g.check_victory()
                 writeGame(g)
@@ -543,9 +545,10 @@ def settlement_build(key, color, x, y, where):
         g.map.place_settlement(Settlement(p, int(x), int(y), int(where)))
         if g.start_placements == 1:
             g.give_start_resources(color, int(x), int(y), int(where))
-        street_locations(color, must_connect=(int(x), int(y), int(where)))
+        street_locations(key, color, must_connect=(int(x), int(y), int(where)))
         g.compute_bank_trade_costs()
         g.check_victory()
+        writeGame(g)
         return {"success": f"placed settlement!"}
 
 
@@ -722,7 +725,7 @@ def play_development_card(key, color: str, card: str):
         g.state = GameState.BUILD_STREET
         g.get_player = p
         g.get_amount = 2
-        street_locations(color)
+        street_locations(key, color)
     if card == "monopoly":
         g.state = GameState.MONOPOLY
         g.get_player = p
@@ -799,32 +802,33 @@ def other(key):
 
 # DEBUG
 """
-dice_throw("yellow")
-dice_throw("red")
+dice_throw(0, "yellow")
+dice_throw(0, "red")
+dice_throw(0, "green")
+print(current(0))
+settlement_build(0, current(0), 0, 0, 0)
+street_build(0, current(0), 0, 0, 0)
+p2.place_random_settlement()
 
-settlement_build(current(), 0, 0, 0)
-street_build(current(), 0, 0, 0)
-p2.place_random_settlement(setup=True)
 
 
+settlement_build(0, current(0), 1, 1, 0)
+street_build(0, current(0), 1, 1, 0)
+settlement_build(0, current(0), 0, 0, 1)
+street_build(0, current(0), 0, 1, 1)
+settlement_build(0, current(0), 2, 2, 0)
+street_build(0, current(0), 2, 2, 1)
 
-settlement_build(current(), 1, 1, 0)
-street_build(current(), 1, 1, 0)
-settlement_build(current(), 0, 0, 1)
-street_build(current(), 0, 1, 1)
-settlement_build(current(), 2, 2, 0)
-street_build(current(), 2, 2, 1)
+dice_throw(0, current(0))
 
-dice_throw(current())
-
-print(g.state)
+print(g1.state)
 # play_development_card(current(), "street_build")
-print(g.state)
+print(g1.state)
 
 print(move_robber(current(), 0, 0))
 print(g.players[g.active_player])
 print(p1.inventory.size(), p2.inventory.size())
-print(rob_player("yellow", "red"))
+print(rob_player(0, "yellow", "red"))
 print(p1.inventory.size(), p2.inventory.size())
+
 """
-dice_throw(0, "yellow")
