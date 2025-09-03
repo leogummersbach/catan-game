@@ -4,16 +4,16 @@ import time
 import requests
 
 from game import *
-
+from packer import *
 
 class Bot(Player):
-    def __init__(self, color: str, game: Game):
+    def __init__(self, color: str, key: int):
         super().__init__(color)
         self.color: str = color
         self.active_player: str = ""
         self.state: GameState = GameState.END
-        self.game = game
-        self.address: str = f"http://localhost:8000/cgameapi/games/{game.key}/"
+        self.key = key
+        self.address: str = f"http://localhost:8000/cgameapi/games/{self.key}/"
 
     def load(self):
         response = requests.get(self.address + "meta")
@@ -26,16 +26,72 @@ class Bot(Player):
         self.active_player = meta["active_player"]
 
     def place_random_settlement(self):
-        locations = self.game.map.corners
+        game = readGame(self.key)
+        locations = game.map.corners
         locations = list(filter(lambda x: x.owner.color == "shadow", locations.values()))
         location = random.choice(locations)
         requests.put(self.address + f"move/settlement_build/{self.color}/{location.x}/{location.y}/{location.where}")
 
     def place_random_street(self):
-        locations = self.game.map.edges
+        game = readGame(self.key)
+        locations = game.map.edges
         locations = list(filter(lambda x: x.owner.color == "shadow", locations.values()))
         location = random.choice(locations)
         requests.put(self.address + f"move/street_build/{self.color}/{location.x}/{location.y}/{location.where}")
+
+    def return_random_cards(self, amount):
+        game = readGame(self.key)
+        me = list(filter(lambda player: player.color == self.color, game.players))[0]
+        left = amount
+
+        wood = 0
+        if me.inventory.wood >= left:
+            wood = left
+        else:
+            wood = me.inventory.wood
+        left -= wood
+
+        clay = 0
+        if me.inventory.clay >= left:
+            clay = left
+        else:
+            clay = me.inventory.clay
+        left -= clay
+
+        sheep = 0
+        if me.inventory.sheep >= left:
+            sheep = left
+        else:
+            sheep = me.inventory.sheep
+        left -= sheep
+
+        wheat = 0
+        if me.inventory.wheat >= left:
+            wheat = left
+        else:
+            wheat = me.inventory.wheat
+        left -= wheat
+
+        ore = 0
+        if me.inventory.ore >= left:
+            ore = left
+        else:
+            ore = me.inventory.ore
+        left -= ore
+
+        return wood, clay, sheep, wheat, ore
+
+    def get_robable(self):
+        g = readGame(self.key)
+        x = None
+        y = None
+        for field_key in g.map.field_figures:
+            field = g.map.field_figures[field_key]
+            if field.type == "robber":
+                x = field_key[0]
+                y = field_key[1]
+        to_draw = g.map.getAdjacentPlayersForField(x, y)
+        return list(filter(lambda color: g.players[g.active_player].color != color, to_draw))
 
     def mainloop(self):
         while True:
@@ -55,3 +111,15 @@ class Bot(Player):
                     requests.put(self.address + f"move/dice_throw/{self.color}")
                 elif self.state == 4:
                     requests.put(self.address + f"move/end/{self.color}")
+                elif self.state == 5:
+                    requests.put(self.address + f"move/move_robber/{self.color}/{0}/{0}")
+                elif self.state == 6:
+                    amount = readGame(self.key).compute_returns[self.color]
+                    wood, clay, sheep, wheat, ore = self.return_random_cards(amount)
+                    requests.put(self.address + f"move/return_cards/{self.color}/{wood}/{clay}/{sheep}/{wheat}/{ore}")
+                elif self.state == 7:
+                    robable = self.get_robable()
+                    rob = random.choice(robable)
+                    requests.put(self.address + f"move/rob_player/{self.color}/{rob}")
+                elif self.state == 8:
+                    requests.put(self.address + f"move/reply_to_active_trade/{self.color}/0")

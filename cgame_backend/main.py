@@ -36,27 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-active_games = []
-ended_games = []
 
-g1 = Game()
-print(f"Start game with key: {g1.key}")
-g1.makeStandardGame()
-p1 = Player("yellow")
-p2 = Bot("red", g1)
-p3 = Bot("green", g1)
-g1.players.append(p1)
-g1.players.append(p2)
-g1.players.append(p3)
-bots = filter(lambda player: isinstance(player, Bot), g1.players)
-for bot in bots:
-    thread = Thread(target=bot.mainloop)
-    thread.start()
-g1.start()
-writeGame(g1)
-active_games.append(g1.key)
-
-writeMeta(active_games, ended_games)
+#  ------------------------------  API handlers  ------------------------------
 
 @app.get("/cgameapi")
 def get_main():
@@ -153,6 +134,7 @@ def dice_throw(key, color):
     DiceThrow(g)
     p.last_dice = g.dice.state
     if g.state == GameState.SETUP_PHASE_ROLL:
+        writeGame(g)
         end_turn(key, color)
         return
     else:
@@ -187,6 +169,7 @@ def move_robber(key, color, x, y):
             new_field[field_key] = field
     new_field[(x, y)] = FieldFigure(x, y, "robber")
     g.map.field_figures = new_field
+    writeGame(g)
     to_draw = get_robable(key)
     if len(to_draw) == 0:
         g.state = GameState.TRADE_BUILD
@@ -243,8 +226,9 @@ def bank_trade(key, color, give_name, get_name):
     writeGame(g)
 
 
-@app.put("/cgameapi/games/{key}/move/player_trade/{color}/{give_wood}/{give_clay}/{give_sheep}/{give_wheat}/{give_ore}/{get_wood}/{"
-         "get_clay}/{get_sheep}/{get_wheat}/{get_ore}")
+@app.put(
+    "/cgameapi/games/{key}/move/player_trade/{color}/{give_wood}/{give_clay}/{give_sheep}/{give_wheat}/{give_ore}/{get_wood}/{"
+    "get_clay}/{get_sheep}/{get_wheat}/{get_ore}")
 def player_trade(key, color, give_wood, give_clay, give_sheep, give_wheat, give_ore, get_wood, get_clay, get_sheep,
                  get_wheat, get_ore):
     g = readGame(key)
@@ -502,7 +486,9 @@ def street_build(key, color, x, y, where):
                 # placeable!
                 g.map.load_original()
                 g.map.place_street(Street(p, int(x), int(y), int(where)))
+                writeGame(g)
                 end_turn(key, color)
+                g = readGame(key)
                 g.compute_longest_road()
                 g.check_victory()
                 writeGame(g)
@@ -545,7 +531,9 @@ def settlement_build(key, color, x, y, where):
         g.map.place_settlement(Settlement(p, int(x), int(y), int(where)))
         if g.start_placements == 1:
             g.give_start_resources(color, int(x), int(y), int(where))
+        writeGame(g)
         street_locations(key, color, must_connect=(int(x), int(y), int(where)))
+        g = readGame(key)
         g.compute_bank_trade_costs()
         g.check_victory()
         writeGame(g)
@@ -717,6 +705,7 @@ def play_development_card(key, color: str, card: str):
         g.state = GameState.MOVE_ROBBER
         p.knights += 1
         g.compute_largest_army()
+        g.check_victory()
     if card == "plenty_year":
         g.state = GameState.GET_CARDS
         g.get_player = p
@@ -800,7 +789,38 @@ def other(key):
     return g.players[(g.active_player + 1) % 2].color
 
 
-# DEBUG
+#  ------------------------------  Game  ------------------------------
+
+active_games = []
+ended_games = []
+
+#  Start game (replace with game selection page)
+
+g1 = Game()  # init new game
+g1.makeStandardGame()  # set up standard map with 19 hex tiles
+
+p1 = Player("yellow")  # Player 1 has color yellow and is human
+p2 = Bot("red", 0)  # Player 2 has color red and is a bot
+p3 = Bot("green", 0)  # Player 3 has color green and is a bot
+
+g1.players.append(p1)  # add player to the game
+g1.players.append(p2)  # add player to the game
+g1.players.append(p3)  # add player to the game
+
+# start all the threads for the bots
+bots = filter(lambda player: isinstance(player, Bot), g1.players)
+for bot in bots:
+    thread = Thread(target=bot.mainloop)
+    thread.start()
+
+g1.start()  # start the game
+writeGame(g1)  # write the game for the first time in the file
+active_games.append(g1.key)  # append the game to the active games list
+
+writeMeta(active_games, ended_games)  # write the meta for the first time in the file
+
+
+# DEBUG (some moves at the beginning of the game)
 """
 dice_throw(0, "yellow")
 dice_throw(0, "red")
@@ -808,7 +828,8 @@ dice_throw(0, "green")
 print(current(0))
 settlement_build(0, current(0), 0, 0, 0)
 street_build(0, current(0), 0, 0, 0)
-p2.place_random_settlement()
+
+#p2.place_random_settlement()
 
 
 

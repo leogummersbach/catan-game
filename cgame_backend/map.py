@@ -106,7 +106,8 @@ class Map:
         self.original = (self.fields, self.edges, self.corners)
 
     def reworkKeys(self):
-        dicts = [self.fields, self.field_figures, self.edges, self.corners, self.harbors]
+        dicts = [self.fields, self.field_figures, self.edges, self.corners, self.harbors, self.original[0], self.original[1], self.original[2]]
+        original = [self.original[0], self.original[1], self.original[2]]
         new_dicts = []
         for d in dicts:
             new_d = {}
@@ -114,8 +115,8 @@ class Map:
                 if type(key) is str:
                     new_d[stringToTuple(key)] = d[key]
             new_dicts.append(new_d)
-        self.fields, self.field_figures, self.edges, self.corners, self.harbors = new_dicts
-
+        self.fields, self.field_figures, self.edges, self.corners, self.harbors, original[0], original[1], original[2] = new_dicts
+        self.original = (original[0], original[1], original[2])
     def json(self):
         fields = []
         for field in self.fields.values():

@@ -2,6 +2,7 @@ import copy
 
 from game import Game
 from map import City
+from packer import writeGame
 
 
 class DiceThrow:
@@ -21,4 +22,5 @@ class DiceThrow:
                 if type(corner) == City:
                     count = 2
                 owner.inventory.add(resource, count)
+        writeGame(game)
         # self.post = copy.deepcopy(game)
